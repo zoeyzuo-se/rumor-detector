@@ -1,8 +1,10 @@
 # scripts/query.py
-from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
-from langchain_community.vectorstores import FAISS
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain.chains import RetrievalQA
 from config import *
+from langchain_community.vectorstores import AzureSearch
+from config import *
+
 
 def main():
     # 用户输入内容
@@ -16,9 +18,20 @@ def main():
         openai_api_version=EMBEDDING_API_VERSION,
     )
 
-    # 加载 FAISS 向量库
-    vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    # 初始化 Azure Search 向量库
+    vectorstore = AzureSearch(
+        azure_search_endpoint=AZURE_SEARCH_ENDPOINT,
+        azure_search_key=AZURE_SEARCH_API_KEY,
+        index_name=AZURE_SEARCH_INDEX_NAME,
+        embedding_function=embeddings,
+    )
 
+    # 构建 QA Chain
+    retriever = vectorstore.as_retriever(search_type="similarity", k=3)
+
+    # vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+
+    print("🧠 Initializing GPT model...")
     # 初始化 GPT 模型
     llm = AzureChatOpenAI(
         azure_deployment="gpt-4",  # 部署的 GPT 模型名字
@@ -28,9 +41,10 @@ def main():
     )
 
     # 构建问答链
+    print("🔗 Building RetrievalQA chain...")
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
-        retriever=vectorstore.as_retriever(),
+        retriever=retriever,  # Use retrieved docs directly
         chain_type="stuff",
         return_source_documents=True
     )

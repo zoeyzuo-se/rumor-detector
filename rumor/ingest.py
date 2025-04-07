@@ -1,7 +1,13 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
-from langchain_community.vectorstores import FAISS
 from langchain_openai import AzureOpenAIEmbeddings
+# from azure.search.documents.indexes import SearchIndexClient
+# from azure.search.documents import SearchClient
+# from azure.ai.projects import AIProjectClient
+# from azure.ai.projects.models import ConnectionType
+# from azure.identity import DefaultAzureCredential
+# from azure.core.credentials import AzureKeyCredential
+from langchain_community.vectorstores.azuresearch import AzureSearch
 from config import *
 import os
 
@@ -10,17 +16,12 @@ DATA_DIR = "data/articles"
 
 def load_documents():
     docs = []
-    print(f"Checking files in directory: {DATA_DIR}")
     for filename in os.listdir(DATA_DIR):
         if filename.endswith(".txt"):
             path = os.path.join(DATA_DIR, filename)
             loader = TextLoader(path, encoding="utf-8")
             docs.extend(loader.load())
     return docs
-
-def load_article(filepath):
-    with open(filepath, "r", encoding="utf-8") as f:
-        return f.read()
 
 def main():
     print("📄 Loading documents...")
@@ -39,9 +40,18 @@ def main():
         openai_api_version=EMBEDDING_API_VERSION,
     )
 
-    vectorstore = FAISS.from_documents(docs, embeddings)
-    vectorstore.save_local("faiss_index")
-    print("✅ FAISS index created and saved!")
+    vectorstore = AzureSearch(
+        azure_search_endpoint=AZURE_SEARCH_ENDPOINT,
+        azure_search_key=AZURE_SEARCH_API_KEY,
+        index_name=AZURE_SEARCH_INDEX_NAME,
+        embedding_function=embeddings.embed_query,
+    )
+
+    print("📦 Uploading documents to Azure Search...")
+    ids = vectorstore.add_documents(docs)
+
+    print(f"🆔 Uploaded document IDs: {ids}")
+    print("✅ Done! Indexed into Azure Cognitive Search.")
 
 if __name__ == "__main__":
     main()
