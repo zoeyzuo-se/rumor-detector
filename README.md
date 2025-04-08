@@ -1,9 +1,8 @@
 # 🧠 WeChat Rumor Detector | 微信视频号谣言识别系统
 
-A Retrieval-Augmented Generation (RAG) system to identify and debunk misinformation or superstition from WeChat Video Channel content.
+A Retrieval-Augmented Generation (RAG) system to identify and debunk misinformation or superstition from WeChat Channel content.
 
-一个结合 RAG 技术的系统，旨在识别和澄清来自微信视频号的谣言与迷信信息。
-
+一个结合 RAG 技术的系统，旨在识别和澄清来自微信的谣言与迷信信息。
 
 
 ## 🚀 Project Overview | 项目简介
